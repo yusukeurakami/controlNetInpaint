@@ -1,0 +1,7 @@
+diffusers
+xformers
+transformers
+scipy
+ftfy
+accelerate
+controlnet_aux
