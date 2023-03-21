@@ -112,14 +112,7 @@ def create_demo(max_images=12, default_num_images=3):
             gr.Markdown('5. (You can also provide a **text prompt** if you want)')
             prompt = gr.Textbox(label='Prompt')   
             gr.Markdown('6. 🔮 Click `Generate` when ready! ')   
-            run_button = gr.Button(label='Generate', value='Generate')         
-            output_image = gr.Gallery(
-                              label="Generated images",
-                              visible=False,
-                              show_label=False,
-                              elem_id="gallery",
-                          )#.style(grid=(1, 2))
-        
+            run_button = gr.Button(label='Generate', value='Generate')               
             with gr.Accordion('Advanced options', open=False):
                 num_steps = gr.Slider(label='Steps',
                                       minimum=1,
@@ -141,7 +134,13 @@ def create_demo(max_images=12, default_num_images=3):
                                             minimum=0.0,
                                             maximum=1.0,
                                             value=1.0,
-                                            step=0.05)                  
+                                            step=0.05)  
+              
+            output_image = gr.Gallery(
+                              label="Generated image",
+                              show_label=False,
+                              elem_id="gallery",
+                          )#.style(grid=(1, 2))
           
         inputs = [
           sketch_image,
