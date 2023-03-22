@@ -78,11 +78,11 @@ def get_guide(image):
 def create_demo(max_images=12, default_num_images=3):
     with gr.Blocks(theme=gr.themes.Default(font=[gr.themes.GoogleFont("IBM Plex Mono"), "ui-monospace","monospace"]), css=css) as demo:
 
-        gr.Markdown('# Cut and Sketch ✂️▶️✏️')
+        gr.Markdown('# Mask and Sketch ✂️▶️✏️')
         with gr.Accordion('Instructions', open=False):
-            gr.Markdown('## Cut ✂️')
+            gr.Markdown('## Mask ✂️')
             gr.Markdown('1. Upload your image below')
-            gr.Markdown('2. **Draw the mask** for the region you want changed (Cut ✂️)')
+            gr.Markdown('2. **Draw the mask** for the region you want changed (Mask ✂️)')
             gr.Markdown('3. Click `Set Mask` when it is ready!')
             gr.Markdown('## Sketch ✏️')
             gr.Markdown('4. Now, you can **sketch a replacement** object! (Sketch ✏️)')
@@ -100,7 +100,7 @@ def create_demo(max_images=12, default_num_images=3):
                                                 shape=[HEIGHT,WIDTH],
                                                 type='numpy',
                                                 elem_classes="image_upload",
-                                              label='Mask Draw (Cut!)',
+                                              label='Mask Draw (Mask!)',
                                                 tool='sketch',
                                                 brush_radius=60).style(height=500)
                           input_image=image
@@ -125,32 +125,32 @@ def create_demo(max_images=12, default_num_images=3):
                                           show_label=False,
                                           elem_id="output_image",
                                       ).style(height=500,containter=True)              
-                with gr.Accordion('Advanced options', open=False):
-                    num_steps = gr.Slider(label='Steps',
-                                      minimum=1,
-                                      maximum=100,
-                                      value=20,
-                                      step=1)
-                    text_scale = gr.Slider(label='Text Guidance Scale',
-                                            minimum=0.1,
-                                            maximum=30.0,
-                                            value=7.5,
-                                            step=0.1)
-                    seed = gr.Slider(label='Seed',
-                                  minimum=-1,
-                                  maximum=2147483647,
-                                  step=1,
-                                  randomize=True)  
-                    
-                    sketch_scale = gr.Slider(label='Sketch Guidance Scale',
-                                            minimum=0.0,
-                                            maximum=1.0,
-                                            value=1.0,
-                                            step=0.05)
+                    with gr.Accordion('Advanced options', open=False):
+                        num_steps = gr.Slider(label='Steps',
+                                          minimum=1,
+                                          maximum=100,
+                                          value=20,
+                                          step=1)
+                        text_scale = gr.Slider(label='Text Guidance Scale',
+                                                minimum=0.1,
+                                                maximum=30.0,
+                                                value=7.5,
+                                                step=0.1)
+                        seed = gr.Slider(label='Seed',
+                                      minimum=-1,
+                                      maximum=2147483647,
+                                      step=1,
+                                      randomize=True)  
+                        
+                        sketch_scale = gr.Slider(label='Sketch Guidance Scale',
+                                                minimum=0.0,
+                                                maximum=1.0,
+                                                value=1.0,
+                                                step=0.05)
 
         with gr.Accordion('More Info', open=False):
             gr.Markdown('This demo was created by Mikolaj Czerkawski [@mikonvergence](https://twitter.com/mikonvergence) based on the 🌱 open-source implementation of [ControlNetInpaint](https://github.com/mikonvergence/ControlNetInpaint) (diffusers-friendly!).')
-            gr.Markdown('The tool currently only works with image resolution of 512px.')
+            gr.Markdown('**Limitation** The tool currently only works with image resolution of 512px. You need to click reload button to draw a new mask after the previous generation since gradio does not allow to control it from software.')
             gr.Markdown('💡 To learn more about diffusion with interactive code, check out my open-source ⏩[DiffusionFastForward](https://github.com/mikonvergence/DiffusionFastForward) course. It contains example code, executable notebooks, videos, notes, and a few use cases for training from scratch!')
         
         inputs = [
