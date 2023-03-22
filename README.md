@@ -1,8 +1,8 @@
 ---
 title: Mask And Sketch
 emoji: 😷
-colorFrom: green
-colorTo: grey
+colorFrom: grey
+colorTo: green
 sdk: gradio
 sdk_version: 3.22.1
 app_file: app.py
