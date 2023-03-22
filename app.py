@@ -55,11 +55,28 @@ if torch.cuda.is_available():
 
 # Functions
 
+css='''
+.container {max-width: 1150px;margin: auto;padding-top: 1.5rem}
+.image_upload{min-height:500px}
+.image_upload [data-testid="image"], .image_upload [data-testid="image"] > div{min-height: 500px}
+.image_upload [data-testid="sketch"], .image_upload [data-testid="sketch"] > div{min-height: 500px}
+.image_upload .touch-none{display: flex}
+#output_image{min-height:500px;max-height=500px;}
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+'''
+
 def get_guide(image):  
-  return hed(image,scribble=True)
+    return hed(image,scribble=True)
 
 def create_demo(max_images=12, default_num_images=3):
-    with gr.Blocks(theme=gr.themes.Default(font=[gr.themes.GoogleFont("IBM Plex Mono"), "ui-monospace","monospace"])) as demo:
+    with gr.Blocks(theme=gr.themes.Default(font=[gr.themes.GoogleFont("IBM Plex Mono"), "ui-monospace","monospace"]), css=css) as demo:
 
         gr.Markdown('# Cut and Sketch ✂️▶️✏️')
         with gr.Accordion('Instructions', open=False):
@@ -71,59 +88,70 @@ def create_demo(max_images=12, default_num_images=3):
             gr.Markdown('4. Now, you can **sketch a replacement** object! (Sketch ✏️)')
             gr.Markdown('5. (You can also provide a **text prompt** if you want)')
             gr.Markdown('6. 🔮 Click `Generate` when ready! ') 
+            example_button=gr.Button(label='example',value='Try example image!').style(full_width=False, size='sm')
             
-        with gr.Row() as main_blocks:
-            with gr.Column() as step_1:
-                gr.Markdown('### Mask Input')   
-                input_image = gr.Image(source='upload',
-                                      shape=[HEIGHT,WIDTH],
-                                      type='numpy',
-                                     elem_id="image-upload",
-                                     label='Mask Draw (Cut!)',
-                                      tool='sketch',
-                                      brush_radius=80)
-                mask_button = gr.Button(label='Set Mask', value='Set Mask',full_width=False)
-            with gr.Column(visible=False) as step_2:     
-                gr.Markdown('### Sketch Input')         
-                sketch_image = gr.Image(source='upload',
-                                      shape=[HEIGHT,WIDTH],
-                                      type='numpy',
-                                      label='Fill Draw (Sketch!)',
-                                      tool='sketch',
-                                      brush_radius=15)
-                run_button = gr.Button(label='Generate', value='Generate') 
-                prompt = gr.Textbox(label='Prompt')    
-        
-            with gr.Column() as output_step:  
-                gr.Markdown('### Output')   
-                output_image = gr.Gallery(
-                                label="Generated images",
-                                show_label=False,
-                                elem_id="gallery",
-                            )
-        
-        with gr.Accordion('Advanced options', open=False):
-            num_steps = gr.Slider(label='Steps',
-                                minimum=1,
-                                maximum=100,
-                                value=20,
-                                step=1)
-            text_scale = gr.Slider(label='Text Guidance Scale',
-                                      minimum=0.1,
-                                      maximum=30.0,
-                                      value=7.5,
-                                      step=0.1)
-            seed = gr.Slider(label='Seed',
-                            minimum=-1,
-                            maximum=2147483647,
-                            step=1,
-                            randomize=True)  
-            
-            sketch_scale = gr.Slider(label='Sketch Guidance Scale',
-                                      minimum=0.0,
-                                      maximum=1.0,
-                                      value=1.0,
-                                      step=0.05)                  
+        with gr.Group():
+            with gr.Box():
+                with gr.Column():
+                    with gr.Row() as main_blocks:
+                        with gr.Column() as step_1:
+                          gr.Markdown('### Mask Input')   
+                          image = gr.Image(source='upload',
+                                                shape=[HEIGHT,WIDTH],
+                                                type='numpy',
+                                                elem_classes="image_upload",
+                                              label='Mask Draw (Cut!)',
+                                                tool='sketch',
+                                                brush_radius=60).style(height=500)
+                          input_image=image
+                          mask_button = gr.Button(label='Set Mask', value='Set Mask')
+                        with gr.Column(visible=False) as step_2:     
+                          gr.Markdown('### Sketch Input')         
+                          sketch = gr.Image(source='upload',
+                                                shape=[HEIGHT,WIDTH],
+                                                type='numpy',
+                                            elem_classes="image_upload",
+                                                label='Fill Draw (Sketch!)',
+                                                tool='sketch',
+                                                brush_radius=10).style(height=500)
+                          sketch_image=sketch
+                          run_button = gr.Button(label='Generate', value='Generate') 
+                          prompt = gr.Textbox(label='Prompt')    
+                        
+                        with gr.Column() as output_step:  
+                          gr.Markdown('### Output')   
+                          output_image = gr.Gallery(
+                                          label="Generated images",
+                                          show_label=False,
+                                          elem_id="output_image",
+                                      ).style(height=500,containter=True)              
+                with gr.Accordion('Advanced options', open=False):
+                    num_steps = gr.Slider(label='Steps',
+                                      minimum=1,
+                                      maximum=100,
+                                      value=20,
+                                      step=1)
+                    text_scale = gr.Slider(label='Text Guidance Scale',
+                                            minimum=0.1,
+                                            maximum=30.0,
+                                            value=7.5,
+                                            step=0.1)
+                    seed = gr.Slider(label='Seed',
+                                  minimum=-1,
+                                  maximum=2147483647,
+                                  step=1,
+                                  randomize=True)  
+                    
+                    sketch_scale = gr.Slider(label='Sketch Guidance Scale',
+                                            minimum=0.0,
+                                            maximum=1.0,
+                                            value=1.0,
+                                            step=0.05)
+
+        with gr.Accordion('More Info', open=False):
+            gr.Markdown('This demo was created by Mikolaj Czerkawski [@mikonvergence](https://twitter.com/mikonvergence) based on the 🌱 open-source implementation of [ControlNetInpaint](https://github.com/mikonvergence/ControlNetInpaint) (diffusers-friendly!).')
+            gr.Markdown('The tool currently only works with image resolution of 512px.')
+            gr.Markdown('💡 To learn more about diffusion with interactive code, check out my open-source ⏩[DiffusionFastForward](https://github.com/mikonvergence/DiffusionFastForward) course. It contains example code, executable notebooks, videos, notes, and a few use cases for training from scratch!')
         
         inputs = [
             sketch_image,
@@ -187,7 +215,12 @@ def create_demo(max_images=12, default_num_images=3):
                 step_1: gr.update(visible=True),
                 step_2: gr.update(visible=False)
                 }
+
+        def example_fill():
+
+          return Image.open('data/xp-love.jpg')
         
+        example_button.click(fn=example_fill, outputs=[input_image])
         mask_button.click(fn=set_mask, inputs=[input_image], outputs=[input_image, sketch_image, step_1,step_2])     
         run_button.click(fn=generate, inputs=inputs, outputs=[output_image, step_1,step_2])
         return demo
