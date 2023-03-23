@@ -1,6 +1,6 @@
 ---
 title: Mask And Sketch
-emoji: 😷
+emoji: ✏️
 colorFrom: green
 colorTo: gray
 sdk: gradio
