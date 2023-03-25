@@ -19,14 +19,6 @@ import os
 # 2. Sketch the mask (image->[image,mask]
 # 3. Sketch the content of the mask
 
-# Global Storage
-CURRENT_IMAGE={'image' : None,
-               'mask' : None,
-               'guide' : None
-            }
-
-HEIGHT,WIDTH=512,512
-
 ## SETUP PIPE
 
 from diffusers import StableDiffusionInpaintPipeline, ControlNetModel, UniPCMultistepScheduler
@@ -62,20 +54,19 @@ css='''
 .image_upload [data-testid="sketch"], .image_upload [data-testid="sketch"] > div{min-height: 500px}
 .image_upload .touch-none{display: flex}
 #output_image{min-height:500px;max-height=500px;}
-@keyframes spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
-}
 '''
 
 def get_guide(image):  
     return hed(image,scribble=True)
 
-def create_demo(max_images=12, default_num_images=3):
+def create_demo():
+    # Global Storage
+    CURRENT_IMAGE={'image': None,
+                   'mask': None,
+                   'guide': None
+                }    
+    HEIGHT, WIDTH=512,512
+    
     with gr.Blocks(theme=gr.themes.Default(font=[gr.themes.GoogleFont("IBM Plex Mono"), "ui-monospace","monospace"],
                                            primary_hue="lime",
                                            secondary_hue="emerald",
