@@ -1,4 +1,4 @@
-diffusers==0.14.0
+diffusers==0.17.0
 xformers
 transformers
 scipy
