@@ -29,7 +29,7 @@ hed = HEDdetector.from_pretrained('lllyasviel/ControlNet')
 canny = CannyDetector()
 
 controlnet = ControlNetModel.from_pretrained(
-    "fusing/stable-diffusion-v1-5-controlnet-canny", torch_dtype=torch.float16
+    "fusing/stable-diffusion-v1-5-controlnet-scribble", torch_dtype=torch.float16
 )
 pipe = StableDiffusionControlNetInpaintPipeline.from_pretrained(
      "runwayml/stable-diffusion-inpainting", controlnet=controlnet, torch_dtype=torch.float16
@@ -37,9 +37,9 @@ pipe = StableDiffusionControlNetInpaintPipeline.from_pretrained(
 
 pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config)
 
-pipe.load_textual_inversion(pretrained_model_name_or_path="/home/urakamiy/repos/diffusers/examples/textual_inversion/textual_inversion_riverplate", weight_name="learned_embeds-steps-1000.bin")
-
-pipe.load_textual_inversion(pretrained_model_name_or_path="/home/urakamiy/repos/diffusers/examples/textual_inversion/textual_inversion_petite-oseille", weight_name="learned_embeds-steps-1000.bin")
+from textural_inversion_config import textural_inversion_file_dict
+for path, weight in textural_inversion_file_dict.items():
+    pipe.load_textual_inversion(pretrained_model_name_or_path=path, weight_name=weight)
 
 if torch.cuda.is_available():
     # Remove if you do not have xformers installed
@@ -60,9 +60,11 @@ css='''
 #output_image{min-height:500px;max-height=500px;}
 '''
 
-def get_guide(image):  
-    return hed(image,scribble=True)
-    #return canny(image)
+def get_guide(image, guide_type="canny"):  
+    if guide_type == "scribble":
+        return hed(image,scribble=True)
+    elif guide_type == "canny":
+        return Image.fromarray(np.repeat(canny(image)[..., np.newaxis], 3, axis=2))    
 
 def create_demo():
     # Global Storage
@@ -187,11 +189,11 @@ def create_demo():
             # save vars
             CURRENT_IMAGE['image']=background
             CURRENT_IMAGE['mask']=mask
-            
+            import cv2; cv2.imwrite("mask.png", CURRENT_IMAGE['mask'])
+
             guide=get_guide(background)
             CURRENT_IMAGE['guide']=np.array(guide)
             guide=255-np.asarray(guide)  
-            
             seg_img = guide*(1-mask) + mask*192
             preview = background * (seg_img==255)
             
