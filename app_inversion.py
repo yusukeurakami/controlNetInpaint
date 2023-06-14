@@ -189,7 +189,6 @@ def create_demo():
             # save vars
             CURRENT_IMAGE['image']=background
             CURRENT_IMAGE['mask']=mask
-            import cv2; cv2.imwrite("mask.png", CURRENT_IMAGE['mask'])
 
             guide=get_guide(background)
             CURRENT_IMAGE['guide']=np.array(guide)
@@ -215,11 +214,20 @@ def create_demo():
             sketch=np.array(content["mask"].convert("RGB").resize((512, 512)))            
             sketch=(255*(sketch>0)).astype(CURRENT_IMAGE['image'].dtype)
             mask=CURRENT_IMAGE['mask']
-            
+            import cv2; cv2.imwrite('mask.png', mask*255)
+
             CURRENT_IMAGE['guide']=(CURRENT_IMAGE['guide']*(mask==0) + sketch*(mask!=0)).astype(CURRENT_IMAGE['image'].dtype)
 
             mask_img=255*CURRENT_IMAGE['mask'].astype(CURRENT_IMAGE['image'].dtype)
 
+            import cv2
+            cv2.imshow("sketch", sketch)
+            cv2.waitKey()
+            cv2.imshow("guide", CURRENT_IMAGE['guide'])
+            cv2.waitKey()
+            cv2.imshow("mask_img", mask_img)
+            cv2.waitKey()
+            
             new_image = pipe(
               prompt,
               num_inference_steps=num_steps,
