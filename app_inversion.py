@@ -14,6 +14,7 @@ from PIL import Image
 import numpy as np
 from io import BytesIO
 import os
+import cv2
 
 # Usage
 # 1. Upload image or fill with white
@@ -115,7 +116,7 @@ def create_demo():
                                         elem_classes="image_upload",
                                             label='Fill Draw (Sketch!)',
                                             tool='sketch',
-                                            brush_radius=10).style(height=500)
+                                            brush_radius=1).style(height=500)
                       sketch_image=sketch
                       run_button = gr.Button(label='Generate', value='Generate', variant="primary") 
                       prompt = gr.Textbox(label='Prompt')    
@@ -214,20 +215,18 @@ def create_demo():
             sketch=np.array(content["mask"].convert("RGB").resize((512, 512)))            
             sketch=(255*(sketch>0)).astype(CURRENT_IMAGE['image'].dtype)
             mask=CURRENT_IMAGE['mask']
-            import cv2; cv2.imwrite('mask.png', mask*255)
 
             CURRENT_IMAGE['guide']=(CURRENT_IMAGE['guide']*(mask==0) + sketch*(mask!=0)).astype(CURRENT_IMAGE['image'].dtype)
 
             mask_img=255*CURRENT_IMAGE['mask'].astype(CURRENT_IMAGE['image'].dtype)
+       
+            output_folder = "./results_app"
+            cv2.imwrite(os.path.join(output_folder, "mask.png"), mask*255)
+            cv2.imwrite(os.path.join(output_folder, "image.png"), cv2.cvtColor(CURRENT_IMAGE['image'], cv2.COLOR_RGB2BGR))
+            cv2.imwrite(os.path.join(output_folder, "sketch.png"), sketch)
+            cv2.imwrite(os.path.join(output_folder, "guide.png"), CURRENT_IMAGE['guide'])
+            cv2.imwrite(os.path.join(output_folder, "mask_img.png"), mask_img)
 
-            import cv2
-            cv2.imshow("sketch", sketch)
-            cv2.waitKey()
-            cv2.imshow("guide", CURRENT_IMAGE['guide'])
-            cv2.waitKey()
-            cv2.imshow("mask_img", mask_img)
-            cv2.waitKey()
-            
             new_image = pipe(
               prompt,
               num_inference_steps=num_steps,
@@ -239,6 +238,10 @@ def create_demo():
               mask_image=Image.fromarray(mask_img)
             ).images#[0]
             
+            new_image_ = np.array(new_image[0])
+            new_image_ = cv2.cvtColor(new_image_, cv2.COLOR_RGB2BGR)
+            cv2.imwrite(os.path.join(output_folder, "new_image.png"), new_image_)
+
             return {output_image : new_image,
                 step_1: gr.update(visible=True),
                 step_2: gr.update(visible=False)

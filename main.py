@@ -46,70 +46,73 @@ if torch.cuda.is_available():
 
     pipe.to('cuda')
 
-CURRENT_IMAGE={'image': None,
-               'mask': None,
-               'guide': None
-            }    
-HEIGHT, WIDTH=512,512
+class ControlInPainter(object):
+    CURRENT_IMAGE={'image': None,
+                   'mask': None,
+                   'guide': None
+                }    
+    HEIGHT, WIDTH=512,512
 
-data_folder = './data'
-output_folder = './results'
+    data_folder = None 
+    output_folder = None
 
-def get_guide(image, guide_type="canny"):  
-    if guide_type == "scribble":
-        return hed(image,scribble=True)
-    elif guide_type == "canny":
-        return Image.fromarray(np.repeat(canny(image)[..., np.newaxis], 3, axis=2))    
+    def get_guide(self, image, guide_type="canny"):  
+        if guide_type == "scribble":
+            return hed(image,scribble=True)
+        elif guide_type == "canny":
+            return Image.fromarray(np.repeat(canny(image)[..., np.newaxis], 3, axis=2))    
 
-def generate(content,
-     prompt,
-     num_steps,
-     text_scale,
-     sketch_scale,
-     seed):
-    sketch=np.array(content["mask"].convert("RGB").resize((512, 512)))            
-    sketch=(255*(sketch>0)).astype(CURRENT_IMAGE['image'].dtype)
-    mask=CURRENT_IMAGE['mask']
-    
-    #CURRENT_IMAGE['guide']=(CURRENT_IMAGE['guide']*(mask==0) + sketch*(mask!=0)).astype(CURRENT_IMAGE['image'].dtype)
-    CURRENT_IMAGE['guide']=sketch*(mask!=0).astype(CURRENT_IMAGE['image'].dtype)
-
-    mask_img=255*CURRENT_IMAGE['mask'].astype(CURRENT_IMAGE['image'].dtype)
-
-    cv2.imwrite(os.path.join(output_folder, "image.png"), cv2.cvtColor(CURRENT_IMAGE['image'], cv2.COLOR_RGB2BGR))
-    cv2.imwrite(os.path.join(output_folder, "sketch.png"), sketch)
-    cv2.imwrite(os.path.join(output_folder, "guide.png"), CURRENT_IMAGE['guide'])
-    cv2.imwrite(os.path.join(output_folder, "mask_img.png"), mask_img)
-
-    new_image = pipe(
+    def generate(self, content,
          prompt,
-         num_inference_steps=num_steps,
-         guidance_scale=text_scale,
-         generator=torch.manual_seed(seed),
-         image=Image.fromarray(CURRENT_IMAGE['image']),
-         control_image=Image.fromarray(CURRENT_IMAGE['guide']),
-         controlnet_conditioning_scale=float(sketch_scale),
-         mask_image=Image.fromarray(mask_img)
-        ).images#[0]
-    return new_image
+         num_steps,
+         text_scale,
+         sketch_scale,
+         seed):
+        sketch=np.array(content["mask"].convert("RGB").resize((512, 512)))            
+        sketch=(255*(sketch>0)).astype(self.CURRENT_IMAGE['image'].dtype)
+        mask=self.CURRENT_IMAGE['mask']
+        #self.CURRENT_IMAGE['guide']=(self.CURRENT_IMAGE['guide']*(mask==0) + sketch*(mask!=0)).astype(self.CURRENT_IMAGE['image'].dtype)
+        self.CURRENT_IMAGE['guide']=sketch*(mask!=0).astype(self.CURRENT_IMAGE['image'].dtype)
 
-def main(args):
-    contents = {}
-    image = cv2.cvtColor(cv2.imread(os.path.join(data_folder, "target.png")), cv2.COLOR_BGR2RGB)
-    image = cv2.resize(image, (HEIGHT, WIDTH))
-    CURRENT_IMAGE['image'] = image
-    mask = cv2.imread(os.path.join(data_folder, 'mask.png'), cv2.COLOR_BGR2RGB)
-    mask = cv2.resize(mask, (HEIGHT, WIDTH))
-    CURRENT_IMAGE['mask'] = mask/255 if 255 in np.unique(mask) else mask
-    ref_image = cv2.cvtColor(cv2.imread(os.path.join(data_folder, "ref.png")), cv2.COLOR_BGR2RGB)
-    ref_image = cv2.resize(ref_image, (HEIGHT, WIDTH))
-    CURRENT_IMAGE['guide'] = np.array(get_guide(image))
-    contents['mask'] = get_guide(ref_image)
+        mask_img=255*self.CURRENT_IMAGE['mask'].astype(self.CURRENT_IMAGE['image'].dtype)
 
-    new_image = generate(contents, args.prompt, num_steps=args.num_steps, text_scale=args.text_scale, sketch_scale=args.sketch_scale, seed=0)
-    new_image = np.array(new_image[0])
-    new_image = cv2.cvtColor(new_image, cv2.COLOR_RGB2BGR)
-    cv2.imwrite(os.path.join(output_folder, "new_image.png"), new_image)
+        cv2.imwrite(os.path.join(self.output_folder, "image.png"), cv2.cvtColor(self.CURRENT_IMAGE['image'], cv2.COLOR_RGB2BGR))
+        cv2.imwrite(os.path.join(self.output_folder, "sketch.png"), sketch)
+        cv2.imwrite(os.path.join(self.output_folder, "guide.png"), self.CURRENT_IMAGE['guide'])
+        cv2.imwrite(os.path.join(self.output_folder, "mask_img.png"), mask_img)
+
+        new_image = pipe(
+             prompt,
+             num_inference_steps=num_steps,
+             guidance_scale=text_scale,
+             generator=torch.manual_seed(seed),
+             image=Image.fromarray(self.CURRENT_IMAGE['image']),
+             control_image=Image.fromarray(self.CURRENT_IMAGE['guide']),
+             controlnet_conditioning_scale=float(sketch_scale),
+             mask_image=Image.fromarray(mask_img)
+            ).images#[0]
+        return new_image
+
+    def main(self, args):
+        self.data_folder = args.data_folder 
+        self.output_folder = args.output_folder
+        contents = {}
+        
+        image = cv2.cvtColor(cv2.imread(os.path.join(self.data_folder, "target.png")), cv2.COLOR_BGR2RGB)
+        image = cv2.resize(image, (self.HEIGHT, self.WIDTH))
+        self.CURRENT_IMAGE['image'] = image
+        mask = cv2.imread(os.path.join(self.data_folder, 'mask.png'), cv2.COLOR_BGR2RGB)
+        mask = cv2.resize(mask, (self.HEIGHT, self.WIDTH))
+        self.CURRENT_IMAGE['mask'] = mask/255 if 255 in np.unique(mask) else mask
+        ref_image = cv2.cvtColor(cv2.imread(os.path.join(self.data_folder, "ref.png")), cv2.COLOR_BGR2RGB)
+        ref_image = cv2.resize(ref_image, (self.HEIGHT, self.WIDTH))
+        self.CURRENT_IMAGE['guide'] = np.array(self.get_guide(image))
+        contents['mask'] = self.get_guide(ref_image)
+
+        new_image = self.generate(contents, args.prompt, num_steps=args.num_steps, text_scale=args.text_scale, sketch_scale=args.sketch_scale, seed=0)
+        new_image = np.array(new_image[0])
+        new_image = cv2.cvtColor(new_image, cv2.COLOR_RGB2BGR)
+        cv2.imwrite(os.path.join(self.output_folder, "new_image.png"), new_image)
 
 if __name__ == "__main__":
     import argparse
@@ -118,5 +121,9 @@ if __name__ == "__main__":
     parser.add_argument("--num_steps", type=int, default=50)
     parser.add_argument("--text_scale", type=float, default=7.5)
     parser.add_argument("--sketch_scale", type=float, default=1.0)
+    parser.add_argument("--data_folder", type=str, default="./data")
+    parser.add_argument("--output_folder", type=str, default="./results")
     args = parser.parse_args()
-    main(args)
+    
+    inp = ControlInPainter()
+    inp.main(args)
